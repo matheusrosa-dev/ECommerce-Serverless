@@ -15,24 +15,31 @@ export async function handler(
     `API Gateway RequestId: ${apiRequestId} - Lambda RequestId: ${lambdaRequestId}`
   );
 
-  const method = event.httpMethod;
   if (event.resource === "/products") {
-    if (method === "GET") {
-      console.log("GET");
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ message: "GET Products - OK" }),
-      };
-    }
+    console.log("POST /products");
+
+    return {
+      statusCode: 201,
+      body: JSON.stringify({ message: "POST /products - OK" }),
+    };
   } else if (event.resource === "/products/{productId}") {
     const productId = event.pathParameters?.productId;
 
-    console.log("GET /products/{productId}");
+    if (event.httpMethod === "PUT") {
+      console.log("PUT /products/{productId}");
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: `GET /products/${productId}` }),
-    };
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ message: `PUT /products/${productId}` }),
+      };
+    } else if (event.httpMethod === "DELETE") {
+      console.log("DELETE /products/{productId}");
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ message: `DELETE /products/${productId}` }),
+      };
+    }
   }
 
   return {
