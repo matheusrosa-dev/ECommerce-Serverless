@@ -3,6 +3,7 @@ import * as lambdaNodeJS from "aws-cdk-lib/aws-lambda-nodejs";
 import * as cdk from "aws-cdk-lib";
 import * as dynadb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
+import * as ssm from "aws-cdk-lib/aws-ssm";
 
 export class ProductsAppStack extends cdk.Stack {
   readonly productsFetchHandler: lambdaNodeJS.NodejsFunction;
@@ -25,6 +26,16 @@ export class ProductsAppStack extends cdk.Stack {
       writeCapacity: 1,
     });
 
+    const productsLayerArn = ssm.StringParameter.valueForStringParameter(
+      this,
+      "ProductsLayerVersionArn"
+    );
+    const productsLayer = lambda.LayerVersion.fromLayerVersionArn(
+      this,
+      "ProductsLayerVersionArn",
+      productsLayerArn
+    );
+
     this.productsFetchHandler = new lambdaNodeJS.NodejsFunction(
       this,
       "ProductsFetchFunction",
@@ -32,7 +43,7 @@ export class ProductsAppStack extends cdk.Stack {
         functionName: "ProductsFetchFunction",
         entry: "lambda/products/productsFetchFunction.ts",
         handler: "handler",
-        memorySize: 128, // Mudar para 512 caso dê erro
+        memorySize: 512, // Mudar para 512 caso dê erro
         runtime: lambda.Runtime.NODEJS_22_X,
         timeout: cdk.Duration.seconds(5),
         bundling: {
@@ -42,6 +53,7 @@ export class ProductsAppStack extends cdk.Stack {
         environment: {
           PRODUCTS_DDB: this.productsDdb.tableName,
         },
+        layers: [productsLayer],
       }
     );
 
@@ -52,7 +64,7 @@ export class ProductsAppStack extends cdk.Stack {
         functionName: "ProductsAdminFunction",
         entry: "lambda/products/productsAdminFunction.ts",
         handler: "handler",
-        memorySize: 128, // Mudar para 512 caso dê erro
+        memorySize: 512, // Mudar para 512 caso dê erro
         runtime: lambda.Runtime.NODEJS_22_X,
         timeout: cdk.Duration.seconds(5),
         bundling: {
@@ -62,6 +74,7 @@ export class ProductsAppStack extends cdk.Stack {
         environment: {
           PRODUCTS_DDB: this.productsDdb.tableName,
         },
+        layers: [productsLayer],
       }
     );
 
