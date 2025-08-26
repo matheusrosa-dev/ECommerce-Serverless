@@ -1,14 +1,14 @@
 import { DocumentClient } from "aws-sdk/clients/dynamodb";
 import { v4 as uuid } from "uuid";
 
-export interface Product {
+export type Product = {
   id: string;
   productName: string;
   code: string;
   price: number;
   model: string;
   productUrl: string;
-}
+};
 
 export class ProductRepository {
   private ddbClient: DocumentClient;
@@ -59,7 +59,7 @@ export class ProductRepository {
     return product;
   }
 
-  async delete(productId: string): Promise<void> {
+  async delete(productId: string): Promise<Product> {
     const data = await this.ddbClient
       .delete({
         TableName: this.productsDdb,
@@ -73,6 +73,8 @@ export class ProductRepository {
     if (!data.Attributes) {
       throw new Error("Product not found");
     }
+
+    return data.Attributes as Product;
   }
 
   async update(productId: string, product: Product): Promise<Product> {
