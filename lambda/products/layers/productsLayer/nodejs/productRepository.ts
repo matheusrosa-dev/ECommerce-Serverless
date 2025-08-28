@@ -1,14 +1,14 @@
 import { DocumentClient } from "aws-sdk/clients/dynamodb";
 import { v4 as uuid } from "uuid";
 
-export type Product = {
+export interface IProduct {
   id: string;
   productName: string;
   code: string;
   price: number;
   model: string;
   productUrl: string;
-};
+}
 
 export class ProductRepository {
   private ddbClient: DocumentClient;
@@ -19,17 +19,17 @@ export class ProductRepository {
     this.productsDdb = productsDdb;
   }
 
-  async getAll(): Promise<Product[]> {
+  async findAll(): Promise<IProduct[]> {
     const data = await this.ddbClient
       .scan({
         TableName: this.productsDdb,
       })
       .promise();
 
-    return data.Items as Product[];
+    return data.Items as IProduct[];
   }
 
-  async getById(productId: string): Promise<Product> {
+  async findOne(productId: string): Promise<IProduct> {
     const data = await this.ddbClient
       .get({
         TableName: this.productsDdb,
@@ -43,10 +43,10 @@ export class ProductRepository {
       throw new Error("Product not found");
     }
 
-    return data.Item as Product;
+    return data.Item as IProduct;
   }
 
-  async create(product: Product): Promise<Product> {
+  async create(product: IProduct): Promise<IProduct> {
     product.id = uuid();
 
     await this.ddbClient
@@ -59,7 +59,7 @@ export class ProductRepository {
     return product;
   }
 
-  async delete(productId: string): Promise<Product> {
+  async delete(productId: string): Promise<IProduct> {
     const data = await this.ddbClient
       .delete({
         TableName: this.productsDdb,
@@ -74,10 +74,10 @@ export class ProductRepository {
       throw new Error("Product not found");
     }
 
-    return data.Attributes as Product;
+    return data.Attributes as IProduct;
   }
 
-  async update(productId: string, product: Product): Promise<Product> {
+  async update(productId: string, product: IProduct): Promise<IProduct> {
     const data = await this.ddbClient
       .update({
         TableName: this.productsDdb,
@@ -100,6 +100,22 @@ export class ProductRepository {
 
     data.Attributes!.id = productId;
 
-    return data.Attributes as Product;
+    return data.Attributes as IProduct;
+  }
+
+  async findManyByIds(productIds: string[]): Promise<IProduct[]> {
+    const keys = productIds.map((id) => ({ id }));
+
+    const data = await this.ddbClient
+      .batchGet({
+        RequestItems: {
+          [this.productsDdb]: {
+            Keys: keys,
+          },
+        },
+      })
+      .promise();
+
+    return data.Responses![this.productsDdb] as IProduct[];
   }
 }

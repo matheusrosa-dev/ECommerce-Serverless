@@ -3,9 +3,12 @@ import {
   APIGatewayProxyResult,
   Context,
 } from "aws-lambda";
-import { Product, ProductRepository } from "/opt/nodejs/productsLayer";
+import { IProduct, ProductRepository } from "/opt/nodejs/productsLayer";
 import { DynamoDB, Lambda } from "aws-sdk";
-import { ProductEvent, ProductEventType } from "/opt/nodejs/productEventsLayer";
+import {
+  IProductEvent,
+  ProductEventType,
+} from "/opt/nodejs/productEventsLayer";
 import AWSXray from "aws-xray-sdk";
 
 AWSXray.captureAWS(require("aws-sdk"));
@@ -32,7 +35,7 @@ export async function handler(
   if (event.resource === "/products") {
     console.log("POST /products");
 
-    const product = JSON.parse(event.body!) as Product;
+    const product = JSON.parse(event.body!) as IProduct;
     const created = await productRepository.create(product);
 
     const response = await sendProductEvent(
@@ -57,7 +60,7 @@ export async function handler(
       console.log("PUT /products/{productId}");
 
       try {
-        const product = JSON.parse(event.body!) as Product;
+        const product = JSON.parse(event.body!) as IProduct;
         const updated = await productRepository.update(productId!, product);
 
         const response = await sendProductEvent(
@@ -126,12 +129,12 @@ export async function handler(
 }
 
 function sendProductEvent(
-  product: Product,
+  product: IProduct,
   eventType: ProductEventType,
   email: string,
   lambdaRequestId: string
 ) {
-  const event: ProductEvent = {
+  const event: IProductEvent = {
     email,
     eventType,
     productCode: product.code,

@@ -4,11 +4,11 @@ export enum ProductEventType {
   DELETED = "PRODUCT_DELETED",
 }
 
-export type ProductEvent = {
+export interface IProductEvent {
   requestId: string;
   eventType: ProductEventType;
   productId: string;
   productCode: string;
   productPrice: number;
   email: string;
-};
+}

@@ -29,12 +29,14 @@ export async function handler(
     if (method === "GET") {
       console.log("GET /products");
 
-      const products = await productRepository.getAll();
+      const products = await productRepository.findAll();
 
       return {
         statusCode: 200,
         body: JSON.stringify({
-          data: products,
+          data: {
+            products,
+          },
         }),
       };
     }
@@ -45,7 +47,7 @@ export async function handler(
     console.log("GET /products/{productId}");
 
     try {
-      const product = await productRepository.getById(productId);
+      const product = await productRepository.findOne(productId);
 
       return {
         statusCode: 200,

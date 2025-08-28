@@ -1,5 +1,5 @@
 import { Callback, Context } from "aws-lambda";
-import { ProductEvent } from "/opt/nodejs/productEventsLayer";
+import { IProductEvent } from "/opt/nodejs/productEventsLayer";
 import { DynamoDB } from "aws-sdk";
 import * as AWSXray from "aws-xray-sdk";
 
@@ -9,7 +9,7 @@ const eventsDdb = process.env.EVENTS_DDB!;
 const ddbClient = new DynamoDB.DocumentClient();
 
 export async function handler(
-  event: ProductEvent,
+  event: IProductEvent,
   context: Context,
   callback: Callback
 ): Promise<void> {
@@ -27,7 +27,7 @@ export async function handler(
   );
 }
 
-function createEvent(event: ProductEvent) {
+function createEvent(event: IProductEvent) {
   const timestamp = Date.now();
   const ttl = ~~(timestamp / 1000 + 5 * 60); // 5 minutos à frente do momento atual
 
