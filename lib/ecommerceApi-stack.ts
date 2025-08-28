@@ -40,6 +40,45 @@ export class ECommerceApiStack extends cdk.Stack {
       props.productsAdminHandler
     );
 
+    const createUpdateProductValidator = new apiGateway.RequestValidator(
+      this,
+      "CreateUpdateProductValidator",
+      {
+        restApi: api,
+        requestValidatorName: "CreateUpdateProductValidator",
+        validateRequestBody: true,
+      }
+    );
+    const createUpdateProductModel = new apiGateway.Model(
+      this,
+      "CreateUpdateProductModel",
+      {
+        modelName: "CreateUpdateProductModel",
+        restApi: api,
+        schema: {
+          type: apiGateway.JsonSchemaType.OBJECT,
+          properties: {
+            productName: {
+              type: apiGateway.JsonSchemaType.STRING,
+            },
+            code: {
+              type: apiGateway.JsonSchemaType.STRING,
+            },
+            model: {
+              type: apiGateway.JsonSchemaType.STRING,
+            },
+            productUrl: {
+              type: apiGateway.JsonSchemaType.STRING,
+            },
+            price: {
+              type: apiGateway.JsonSchemaType.NUMBER,
+            },
+          },
+          required: ["productName", "code"],
+        },
+      }
+    );
+
     const productsResource = api.root.addResource("products");
     const productIdResource = productsResource.addResource("{productId}");
 
@@ -50,10 +89,20 @@ export class ECommerceApiStack extends cdk.Stack {
     productIdResource.addMethod("GET", productsFetchIntegration);
 
     // POST - /products
-    productsResource.addMethod("POST", productsAdminIntegration);
+    productsResource.addMethod("POST", productsAdminIntegration, {
+      requestValidator: createUpdateProductValidator,
+      requestModels: {
+        "application/json": createUpdateProductModel,
+      },
+    });
 
     // PUT - /products/{productId}
-    productIdResource.addMethod("PUT", productsAdminIntegration);
+    productIdResource.addMethod("PUT", productsAdminIntegration, {
+      requestValidator: createUpdateProductValidator,
+      requestModels: {
+        "application/json": createUpdateProductModel,
+      },
+    });
 
     // DELETE - /products/{productId}
     productIdResource.addMethod("DELETE", productsAdminIntegration);
@@ -66,6 +115,41 @@ export class ECommerceApiStack extends cdk.Stack {
     const ordersIntegration = new apiGateway.LambdaIntegration(
       props.ordersHandler
     );
+
+    const createOrderValidator = new apiGateway.RequestValidator(
+      this,
+      "CreateOrderValidator",
+      {
+        restApi: api,
+        requestValidatorName: "CreateOrderValidator",
+        validateRequestBody: true,
+      }
+    );
+
+    const createOrderModel = new apiGateway.Model(this, "CreateOrderModel", {
+      modelName: "CreateOrderModel",
+      restApi: api,
+      schema: {
+        type: apiGateway.JsonSchemaType.OBJECT,
+        properties: {
+          email: {
+            type: apiGateway.JsonSchemaType.STRING,
+          },
+          productIds: {
+            type: apiGateway.JsonSchemaType.ARRAY,
+            minItems: 1,
+            items: {
+              type: apiGateway.JsonSchemaType.STRING,
+            },
+          },
+          payment: {
+            type: apiGateway.JsonSchemaType.STRING,
+            enum: ["CASH", "DEBIT_CARD", "CREDIT_CARD"],
+          },
+        },
+        required: ["email", "productIds", "payment"],
+      },
+    });
 
     const ordersResource = api.root.addResource("orders");
 
@@ -83,7 +167,12 @@ export class ECommerceApiStack extends cdk.Stack {
     ordersResource.addMethod("GET", ordersIntegration);
 
     // POST - /orders
-    ordersResource.addMethod("POST", ordersIntegration);
+    ordersResource.addMethod("POST", ordersIntegration, {
+      requestValidator: createOrderValidator,
+      requestModels: {
+        "application/json": createOrderModel,
+      },
+    });
 
     // DELETE - /orders
     // DELETE - /orders?email=teste@email.com&orderId=123
