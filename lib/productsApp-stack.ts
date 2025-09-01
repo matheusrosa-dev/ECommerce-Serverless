@@ -4,6 +4,7 @@ import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
 import * as ssm from "aws-cdk-lib/aws-ssm";
+import * as iam from "aws-cdk-lib/aws-iam";
 
 interface IProps extends cdk.StackProps {
   eventsDdb: dynamodb.Table;
@@ -122,9 +123,21 @@ export class ProductsAppStack extends cdk.Stack {
       }
     );
 
-    props.eventsDdb.grantWriteData(productEventsHandler);
     this.productsDdb.grantReadData(this.productsFetchHandler);
     this.productsDdb.grantWriteData(this.productsAdminHandler);
     productEventsHandler.grantInvoke(this.productsAdminHandler);
+
+    const eventsDdbPolicy = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ["dynamodb:PutItem"],
+      resources: [props.eventsDdb.tableArn],
+      conditions: {
+        ["ForAllValues:StringLike"]: {
+          "dynamodb:LeadingKeys": ["#product_*"],
+        },
+      },
+    });
+
+    productEventsHandler.addToRolePolicy(eventsDdbPolicy);
   }
 }
