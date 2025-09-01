@@ -6,17 +6,18 @@ import { ProductsAppLayersStack } from "../lib/productsAppLayers-stack";
 import { EventsDdbStack } from "../lib/eventsDdb-stack";
 import { OrdersAppStack } from "../lib/ordersApp-stack";
 import { OrdersAppLayersStack } from "../lib/ordersAppLayers-stack";
+import "dotenv/config";
 
 const app = new cdk.App();
 
 const env: cdk.Environment = {
-  account: "REMOVIDO",
-  region: "REMOVIDO",
+  account: process.env.CDK_ACCOUNT,
+  region: process.env.CDK_REGION,
 };
 
 const tags = {
   cost: "ECommerce",
-  team: "SiecolaCode",
+  team: "Matheus",
 };
 
 const eventsDdbStack = new EventsDdbStack(app, "EventsDdb", {
