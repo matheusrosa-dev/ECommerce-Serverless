@@ -245,7 +245,7 @@ function buildOrderResponse(order: IOrder): IOrderResponse {
 
 function sendOrderEvent(
   order: IOrder,
-  event: OrderEventType,
+  eventType: OrderEventType,
   lambdaRequestId: string
 ) {
   const orderEvent: IOrderEvent = {
@@ -258,7 +258,7 @@ function sendOrderEvent(
   };
 
   const envelope: IEnvelope = {
-    eventType: event,
+    eventType,
     data: JSON.stringify(orderEvent),
   };
 
@@ -266,6 +266,12 @@ function sendOrderEvent(
     .publish({
       TopicArn: orderEventsTopicArn,
       Message: JSON.stringify(envelope),
+      MessageAttributes: {
+        eventType: {
+          DataType: "String",
+          StringValue: eventType,
+        },
+      },
     })
     .promise();
 }
