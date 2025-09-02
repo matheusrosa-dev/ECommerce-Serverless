@@ -7,6 +7,8 @@ import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as sns from "aws-cdk-lib/aws-sns";
 import * as subs from "aws-cdk-lib/aws-sns-subscriptions";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as lambdaEventSource from "aws-cdk-lib/aws-lambda-event-sources";
 
 interface IProps extends cdk.StackProps {
   productsDdb: dynamodb.Table;
@@ -160,6 +162,33 @@ export class OrdersAppStack extends cdk.Stack {
       }
     );
 
+    const orderEmailsHandler = new lambdaNodeJS.NodejsFunction(
+      this,
+      "OrderEmailsFunction",
+      {
+        functionName: "OrderEmailsFunction",
+        entry: "lambda/orders/orderEmailsFunction.ts",
+        handler: "handler",
+        memorySize: 512,
+        runtime: lambda.Runtime.NODEJS_22_X,
+        timeout: cdk.Duration.seconds(5),
+        bundling: {
+          minify: true,
+          sourceMap: false,
+          nodeModules: ["aws-xray-sdk-core"],
+        },
+        layers: [orderEventsLayer],
+        tracing: lambda.Tracing.ACTIVE,
+        insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0,
+      }
+    );
+
+    const orderEventsQueue = new sqs.Queue(this, "OrderEventsQueue", {
+      queueName: "order-events",
+      enforceSSL: false,
+      encryption: sqs.QueueEncryption.UNENCRYPTED,
+    });
+
     ordersDdb.grantReadWriteData(this.ordersHandler);
     props.productsDdb.grantReadData(this.ordersHandler);
 
@@ -168,6 +197,15 @@ export class OrdersAppStack extends cdk.Stack {
     );
     ordersTopic.addSubscription(
       new subs.LambdaSubscription(billingHandler, {
+        filterPolicy: {
+          eventType: sns.SubscriptionFilter.stringFilter({
+            allowlist: ["ORDER_CREATED"],
+          }),
+        },
+      })
+    );
+    ordersTopic.addSubscription(
+      new subs.SqsSubscription(orderEventsQueue, {
         filterPolicy: {
           eventType: sns.SubscriptionFilter.stringFilter({
             allowlist: ["ORDER_CREATED"],
@@ -189,5 +227,13 @@ export class OrdersAppStack extends cdk.Stack {
     });
 
     orderEventsHandler.addToRolePolicy(eventsDdbPolicy);
+    orderEventsQueue.grantConsumeMessages(orderEmailsHandler);
+    orderEmailsHandler.addEventSource(
+      new lambdaEventSource.SqsEventSource(orderEventsQueue, {
+        batchSize: 5,
+        enabled: true,
+        maxBatchingWindow: cdk.Duration.minutes(1),
+      })
+    );
   }
 }
