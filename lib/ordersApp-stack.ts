@@ -183,10 +183,20 @@ export class OrdersAppStack extends cdk.Stack {
       }
     );
 
+    const orderEventsDlq = new sqs.Queue(this, "OrderEventsDlq", {
+      queueName: "order-events-dlq",
+      retentionPeriod: cdk.Duration.days(10),
+      enforceSSL: false,
+      encryption: sqs.QueueEncryption.UNENCRYPTED,
+    });
     const orderEventsQueue = new sqs.Queue(this, "OrderEventsQueue", {
       queueName: "order-events",
       enforceSSL: false,
       encryption: sqs.QueueEncryption.UNENCRYPTED,
+      deadLetterQueue: {
+        maxReceiveCount: 3,
+        queue: orderEventsDlq,
+      },
     });
 
     ordersDdb.grantReadWriteData(this.ordersHandler);
