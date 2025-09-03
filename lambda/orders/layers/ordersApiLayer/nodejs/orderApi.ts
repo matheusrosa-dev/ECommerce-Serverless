@@ -41,5 +41,5 @@ export interface IOrderResponse {
     type: ShippingType;
     carrier: CarrierType;
   };
-  products: IOrderProductResponse[];
+  products?: IOrderProductResponse[];
 }

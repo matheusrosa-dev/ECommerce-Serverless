@@ -218,18 +218,17 @@ function buildOrder(orderRequest: IOrderRequest, products: IProduct[]): IOrder {
 }
 
 function buildOrderResponse(order: IOrder): IOrderResponse {
-  const orderProducts: IOrderProductResponse[] = order.products.map(
-    (product) => ({
+  const orderProducts: IOrderProductResponse[] =
+    order.products?.map((product) => ({
       code: product.code,
       price: product.price,
-    })
-  );
+    })) || [];
 
   const orderResponse: IOrderResponse = {
     email: order.pk,
     id: order.sk!,
     createdAt: order.createdAt!,
-    products: orderProducts,
+    products: orderProducts.length > 0 ? orderProducts : undefined,
     billing: {
       payment: order.billing.payment as PaymentType,
       totalPrice: order.billing.totalPrice,
@@ -254,7 +253,7 @@ function sendOrderEvent(
     billing: order.billing,
     shipping: order.shipping,
     requestId: lambdaRequestId,
-    productCodes: order.products.map((product) => product.code),
+    productCodes: order.products?.map((product) => product.code) || [],
   };
 
   const envelope: IEnvelope = {
