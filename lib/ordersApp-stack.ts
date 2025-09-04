@@ -236,8 +236,15 @@ export class OrdersAppStack extends cdk.Stack {
       },
     });
 
+    const orderEmailSesPolicy = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ["ses:SendEmail", "ses:SendRawEmail"],
+      resources: ["*"],
+    });
+
     orderEventsHandler.addToRolePolicy(eventsDdbPolicy);
     orderEventsQueue.grantConsumeMessages(orderEmailsHandler);
+    orderEmailsHandler.addToRolePolicy(orderEmailSesPolicy);
     orderEmailsHandler.addEventSource(
       new lambdaEventSource.SqsEventSource(orderEventsQueue, {
         batchSize: 5,

@@ -8,6 +8,7 @@ export class EventsDdbStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    // MODO PAY PER REQUEST
     this.table = new dynamodb.Table(this, "EventsDdb", {
       tableName: "events",
       removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -20,29 +21,45 @@ export class EventsDdbStack extends cdk.Stack {
         type: dynamodb.AttributeType.STRING,
       },
       timeToLiveAttribute: "ttl",
-      billingMode: dynamodb.BillingMode.PROVISIONED,
-      readCapacity: 1,
-      writeCapacity: 1,
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
     });
 
-    const readScale = this.table.autoScaleReadCapacity({
-      maxCapacity: 2,
-      minCapacity: 1,
-    });
-    readScale.scaleOnUtilization({
-      targetUtilizationPercent: 50,
-      scaleInCooldown: cdk.Duration.seconds(60),
-      scaleOutCooldown: cdk.Duration.seconds(60),
-    });
+    // MODO PROVISIONADO COM AUTO-SCALING
+    // this.table = new dynamodb.Table(this, "EventsDdb", {
+    //   tableName: "events",
+    //   removalPolicy: cdk.RemovalPolicy.DESTROY,
+    //   partitionKey: {
+    //     name: "pk",
+    //     type: dynamodb.AttributeType.STRING,
+    //   },
+    //   sortKey: {
+    //     name: "sk",
+    //     type: dynamodb.AttributeType.STRING,
+    //   },
+    //   timeToLiveAttribute: "ttl",
+    //   billingMode: dynamodb.BillingMode.PROVISIONED,
+    //   readCapacity: 1,
+    //   writeCapacity: 1,
+    // });
 
-    const writeScale = this.table.autoScaleWriteCapacity({
-      maxCapacity: 4,
-      minCapacity: 1,
-    });
-    writeScale.scaleOnUtilization({
-      targetUtilizationPercent: 30,
-      scaleInCooldown: cdk.Duration.seconds(60),
-      scaleOutCooldown: cdk.Duration.seconds(60),
-    });
+    // const readScale = this.table.autoScaleReadCapacity({
+    //   maxCapacity: 2,
+    //   minCapacity: 1,
+    // });
+    // readScale.scaleOnUtilization({
+    //   targetUtilizationPercent: 50,
+    //   scaleInCooldown: cdk.Duration.seconds(60),
+    //   scaleOutCooldown: cdk.Duration.seconds(60),
+    // });
+
+    // const writeScale = this.table.autoScaleWriteCapacity({
+    //   maxCapacity: 4,
+    //   minCapacity: 1,
+    // });
+    // writeScale.scaleOnUtilization({
+    //   targetUtilizationPercent: 30,
+    //   scaleInCooldown: cdk.Duration.seconds(60),
+    //   scaleOutCooldown: cdk.Duration.seconds(60),
+    // });
   }
 }
