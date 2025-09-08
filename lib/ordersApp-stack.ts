@@ -17,6 +17,7 @@ interface IProps extends cdk.StackProps {
 
 export class OrdersAppStack extends cdk.Stack {
   readonly ordersHandler: lambdaNodeJS.NodejsFunction;
+  readonly orderEventsFetchHandler: lambdaNodeJS.NodejsFunction;
 
   constructor(scope: Construct, id: string, props: IProps) {
     super(scope, id, props);
@@ -182,6 +183,29 @@ export class OrdersAppStack extends cdk.Stack {
         insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0,
       }
     );
+    this.orderEventsFetchHandler = new lambdaNodeJS.NodejsFunction(
+      this,
+      "OrderEventsFetchFunction",
+      {
+        functionName: "OrderEventsFetchFunction",
+        entry: "lambda/orders/orderEventsFetchFunction.ts",
+        handler: "handler",
+        memorySize: 512,
+        runtime: lambda.Runtime.NODEJS_22_X,
+        timeout: cdk.Duration.seconds(5),
+        bundling: {
+          minify: true,
+          sourceMap: false,
+          nodeModules: ["aws-xray-sdk-core"],
+        },
+        layers: [orderEventsRepositoryLayer],
+        environment: {
+          EVENTS_DDB: props.eventsDdb.tableName,
+        },
+        tracing: lambda.Tracing.ACTIVE,
+        insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0,
+      }
+    );
 
     const orderEventsDlq = new sqs.Queue(this, "OrderEventsDlq", {
       queueName: "order-events-dlq",
@@ -235,6 +259,13 @@ export class OrdersAppStack extends cdk.Stack {
         },
       },
     });
+
+    const eventsFetchDdbPolicy = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ["dynamodb:Query"],
+      resources: [`${props.eventsDdb.tableArn}/index/emailIndex`],
+    });
+    this.orderEventsFetchHandler.addToRolePolicy(eventsFetchDdbPolicy);
 
     const orderEmailSesPolicy = new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
