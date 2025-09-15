@@ -6,6 +6,9 @@ import { ProductsAppLayersStack } from "../lib/productsAppLayers-stack";
 import { EventsDdbStack } from "../lib/eventsDdb-stack";
 import { OrdersAppStack } from "../lib/ordersApp-stack";
 import { OrdersAppLayersStack } from "../lib/ordersAppLayers-stack";
+import { InvoiceWSApiStack } from "../lib/invoiceWSApi-stack";
+import { InvoicesAppLayersStack } from "../lib/invoicesAppLayers-stack";
+
 import "dotenv/config";
 
 const app = new cdk.App();
@@ -68,3 +71,25 @@ const eCommerceApiStack = new ECommerceApiStack(app, "ECommerceApiStack", {
 
 eCommerceApiStack.addDependency(productsAppStack);
 eCommerceApiStack.addDependency(ordersAppStack);
+
+const invoicesAppLayersStack = new InvoicesAppLayersStack(
+  app,
+  "InvoicesAppLayers",
+  {
+    tags: {
+      cost: "InvoiceApp",
+      team: "Matheus Code",
+    },
+    env,
+  }
+);
+
+const invoiceWsApiStack = new InvoiceWSApiStack(app, "InvoiceApi", {
+  tags: {
+    cost: "InvoiceApp",
+    team: "Matheus Code",
+  },
+  env,
+});
+
+invoiceWsApiStack.addDependency(invoicesAppLayersStack);
