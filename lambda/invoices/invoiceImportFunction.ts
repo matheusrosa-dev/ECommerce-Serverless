@@ -128,6 +128,8 @@ async function processRecord(record: S3EventRecord) {
         InvoiceTransactionStatus.PROCESSED
       ),
     ]);
+
+    await invoiceWSService.disconnectClient(invoiceTransaction.connectionId);
   } catch (error) {
     console.log((<Error>error).message);
   }
